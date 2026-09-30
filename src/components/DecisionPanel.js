@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { validateEligibility, parseBalance, REMARKS_MAX } from '@/lib/validation.js';
 import { plural } from '@/lib/dates.js';
 import FieldError from './FieldError.js';
+import { withBase } from '@/lib/paths.js';
 
 const OPTIONS = {
   streamLead: [['recommended', 'Recommend'], ['not_recommended', 'Do not recommend']],
@@ -60,7 +61,7 @@ export default function DecisionPanel({ role, requestId, token, preset, requeste
     setBusy(true);
     setError('');
     try {
-      const res = await fetch(`/api/requests/${encodeURIComponent(requestId)}/decision`, {
+      const res = await fetch(withBase(`/api/requests/${encodeURIComponent(requestId)}/decision`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, decision: choice, remarks, ...bal }),

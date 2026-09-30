@@ -1,6 +1,7 @@
 import '@fontsource-variable/inter';
 import './globals.css';
 import { ORG_NAME, FORM_TITLE } from '@/config/workflow.js';
+import { withBase } from '@/lib/paths.js';
 
 export const metadata = {
   title: 'CTO Application – ' + ORG_NAME,
@@ -13,12 +14,12 @@ export default function RootLayout({ children }) {
       <body>
         <header className="site-header">
           <div className="site-header__inner">
-            <a href="/" className="site-brand">
+            <a href={withBase('/')} className="site-brand">
               {ORG_NAME}
               <small>{FORM_TITLE}</small>
             </a>
             <nav className="site-nav" aria-label="Main">
-              <a href="/">New application</a>
+              <a href={withBase('/')}>New application</a>
             </nav>
           </div>
         </header>

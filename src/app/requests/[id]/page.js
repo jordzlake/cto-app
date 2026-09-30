@@ -7,6 +7,7 @@ import { roleForToken, currentRole, publicView, FINAL_STATUSES } from '@/lib/wor
 import { STREAMS } from '@/config/workflow.js';
 import { fmtLong, fmtDate, fmtDateTime, plural } from '@/lib/dates.js';
 import DecisionPanel from '@/components/DecisionPanel.js';
+import { withBase } from '@/lib/paths.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export default async function RequestPage({ params, searchParams }) {
         <div className="cto-plain">
           <h2>This link isn’t valid</h2>
           <p>The request couldn’t be found, or the link is incomplete. Open the link from your email again, making sure the whole address was copied.</p>
-          <a className="cto-btn cto-btn--secondary" href="/">Go to the application form</a>
+          <a className="cto-btn cto-btn--secondary" href={withBase('/')}>Go to the application form</a>
         </div>
       </section>
     );
@@ -67,7 +68,7 @@ export default async function RequestPage({ params, searchParams }) {
   const mailStatus = typeof sp.mail === 'string' ? sp.mail : '';
   const final = FINAL_STATUSES.includes(req.status);
   const a = req.applicant;
-  const pdfUrl = `/api/requests/${req.id}/pdf?t=${encodeURIComponent(token)}`;
+  const pdfUrl = withBase(`/api/requests/${req.id}/pdf?t=${encodeURIComponent(token)}`);
   const selfUrl = `/requests/${req.id}?t=${encodeURIComponent(token)}`;
 
   const panel = (forRole) => canAct && role === forRole ? (
@@ -108,7 +109,7 @@ export default async function RequestPage({ params, searchParams }) {
             <p className="cto-alert__title">Your decision has been recorded</p>
             <p>{doneMessage(req, done)}</p>
             {mailStatus && mailStatus !== 'sent' && (
-              <p>The email notification couldn’t be sent yet because the mail relay isn’t reachable. It has been queued and will be sent automatically.{process.env.NODE_ENV !== 'production' && <> Development: <a href="/mail">open the mail outbox</a>.</>}</p>
+              <p>The email notification couldn’t be sent yet because the mail relay isn’t reachable. It has been queued and will be sent automatically.{process.env.NODE_ENV !== 'production' && <> Development: <a href={withBase('/mail')}>open the mail outbox</a>.</>}</p>
             )}
           </div>
         )}

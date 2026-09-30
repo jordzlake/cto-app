@@ -9,6 +9,7 @@ import { STREAMS, STREAM_IDS, MAX_DAYS, ALLOWED_EMAIL_DOMAINS } from '@/config/w
 import { applicantRules, APPLICANT_FIELDS, normalizeText } from '@/lib/validation.js';
 import { todayYMD, endDateFor, resumeDateFor, fmtLong, fmtDate, fmtDateTime, plural } from '@/lib/dates.js';
 import FieldError from './FieldError.js';
+import { withBase } from '@/lib/paths.js';
 
 const EMPTY = { name: '', position: '', email: '', days: '', startDate: '', outsideCountry: '', stream: '' };
 const INPUT_ID = {
@@ -115,7 +116,7 @@ export default function ApplicationForm({ initialToday = '' }) {
     setSummary(null);
     setBusy(true);
     try {
-      const res = await fetch('/api/requests', {
+      const res = await fetch(withBase('/api/requests'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...values, name: normalizeText(values.name), position: normalizeText(values.position) }),
@@ -352,7 +353,7 @@ function Success({ result, headingRef, onNew }) {
         {result.mail?.status !== 'sent' && (
           <div className="cto-alert cto-alert--warning cto-alert--flush" style={{ marginTop: 16 }}>
             <p><strong>Your request is saved.</strong> The email to {result.forwardedTo} couldn’t be sent yet because the mail relay isn’t reachable. It will be sent automatically when the relay is back.</p>
-            {result.outboxUrl && <p>Development: see the email in the <a href={result.outboxUrl}>mail outbox</a>.</p>}
+            {result.outboxUrl && <p>Development: see the email in the <a href={withBase(result.outboxUrl)}>mail outbox</a>.</p>}
           </div>
         )}
         <dl className="cto-summary">
@@ -361,7 +362,7 @@ function Success({ result, headingRef, onNew }) {
           ))}
         </dl>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <a className="cto-btn cto-btn--primary" href={result.trackUrl}>Track this request</a>
+          <a className="cto-btn cto-btn--primary" href={withBase(result.trackUrl)}>Track this request</a>
           <button type="button" className="cto-btn cto-btn--secondary" onClick={onNew}>Start a new request</button>
         </div>
         <p className="cto-hint" style={{ marginTop: 12 }}>Bookmark “Track this request” to check its progress. You’ll get the completed form by email once a decision is made.</p>

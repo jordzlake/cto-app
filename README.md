@@ -42,6 +42,80 @@ Use Node 20.9 or newer. The server needs a **writable, persistent** `DATA_DIR`, 
 
 **Validation:** Name and Position accept letters, spaces and dashes only, with no numbers. Name must include a first and last name. Days must be 1–60. Start date is picked from a calendar, can't be in the past, and must be a working day. Email must be a `@gov.tt` address. Every rule is checked again on the server.
 
+## Deploying on Ubuntu 22.04 (GitHub + pm2, served at /cto)
+
+Layout on the server:
+
+```
+/var/www/CTOApplication/
+├── cto-app/     <- git clone of the repo (code only; `git pull` updates it)
+└── data/        <- mail outbox (and JSON requests if no database). Never touched by git.
+```
+
+**1. Node.js 22 and pm2** (Ubuntu 22's own `nodejs` package is too old):
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs git
+sudo npm install -g pm2
+```
+
+**2. Clone and configure** (as your normal user, not root):
+
+```bash
+sudo mkdir -p /var/www/CTOApplication/data
+sudo chown -R $USER:$USER /var/www/CTOApplication
+cd /var/www/CTOApplication
+git clone https://github.com/<you>/<repo>.git cto-app
+cd cto-app
+cp .env.example .env
+nano .env
+```
+
+Set at least:
+
+```
+APP_URL=https://your-server/cto
+BASE_PATH=/cto
+DATA_DIR=/var/www/CTOApplication/data
+DATABASE_URL=mysql://cto_app:password@db-host:3306/your_database
+MAIL_FROM="ICT Services - CTO Requests <cto-requests@gov.tt>"
+ADMIN_KEY=<long random string>      # openssl rand -hex 24
+```
+
+`.env` is git-ignored, so it's never pushed to the public repo and `git pull` never overwrites it.
+
+**3. Build and start:**
+
+```bash
+./scripts/deploy.sh
+pm2 startup        # run the sudo command it prints, so pm2 starts on boot
+pm2 save
+```
+
+The app listens on `127.0.0.1:3010` only. Change the port in `ecosystem.config.cjs` if 3010 is taken.
+
+**4. Web server** - add one block to the site that already serves your other apps:
+- nginx: `deploy/nginx-cto.conf`
+- Apache: `deploy/apache-cto.conf`
+
+Then open `https://your-server/cto`.
+
+**Updating later:** push to GitHub, then on the server run:
+
+```bash
+/var/www/CTOApplication/cto-app/scripts/deploy.sh
+```
+
+It pulls, installs, builds and reloads pm2.
+
+**Useful commands:**
+- `pm2 logs cto-app` - app logs
+- `pm2 restart cto-app` - restart
+- `npm run db:verify` - check the database connection
+- `npm run mail:verify` - check the mail relay connection
+- `https://your-server/cto/mail?key=<ADMIN_KEY>` - mail outbox
+
 ## Database (MariaDB)
 
 Applications are saved to the table **`ctoapplications`**. The row is inserted when the applicant submits and updated at each approval step.

@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fmtDateTime } from '@/lib/dates.js';
+import { withBase } from '@/lib/paths.js';
 
 const STATUS = {
   sent: ['Sent', 'ok'],
@@ -29,7 +30,7 @@ export default function MailOutbox({ initial, adminKey, relay }) {
   async function verify() {
     setBusy('verify'); setNote(null);
     try {
-      const r = await (await fetch('/api/mail/verify' + q)).json();
+      const r = await (await fetch(withBase('/api/mail/verify' + q))).json();
       setNote(r.ok
         ? { tone: 'success', text: `Relay ${r.host}:${r.port} is reachable.` }
         : { tone: 'error', text: `Relay ${r.host}:${r.port} can’t be reached: ${r.error}` });
@@ -40,7 +41,7 @@ export default function MailOutbox({ initial, adminKey, relay }) {
   async function flush(opts) {
     setBusy('flush'); setNote(null);
     try {
-      const r = await (await fetch('/api/mail/flush', {
+      const r = await (await fetch(withBase('/api/mail/flush'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: adminKey, ...opts }),
       })).json();
       if (r.error) throw new Error(r.error);
@@ -107,12 +108,12 @@ export default function MailOutbox({ initial, adminKey, relay }) {
                 {mail.cc?.length > 0 && <div><b>Cc</b>{mail.cc.join(', ')}</div>}
                 <div><b>Status</b>{(STATUS[mail.status] || [mail.status])[0]} · {mail.attempts} attempt{mail.attempts === 1 ? '' : 's'}{mail.sentAt ? ' · sent ' + fmtDateTime(mail.sentAt) : ''}</div>
                 {mail.attachments?.length > 0 && <div><b>Attachments</b>{mail.attachments.map((a, i) => (
-                  <a key={i} href={`/api/mail/${mail.id}${q ? q + '&' : '?'}attachment=${i}`} target="_blank" rel="noopener" style={{ marginRight: 10 }}>{a.filename}</a>
+                  <a key={i} href={withBase(`/api/mail/${mail.id}${q ? q + '&' : '?'}attachment=${i}`)} target="_blank" rel="noopener" style={{ marginRight: 10 }}>{a.filename}</a>
                 ))}</div>}
                 {mail.lastError && mail.status !== 'sent' && <div className="ob-error"><b>Last error</b>{mail.lastError}</div>}
                 {mail.status !== 'sent' && <div><button className="cto-btn cto-btn--secondary" style={{ height: 32, marginTop: 6 }} disabled={!!busy} onClick={() => flush({ ids: [mail.id], includeHeld: true, includeFailed: true })}>Try sending this email now</button></div>}
               </div>
-              <iframe key={mail.id} title="Email preview" src={`/api/mail/${mail.id}${q}`} sandbox="allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" />
+              <iframe key={mail.id} title="Email preview" src={withBase(`/api/mail/${mail.id}${q}`)} sandbox="allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation" />
             </div>
           )}
         </div>

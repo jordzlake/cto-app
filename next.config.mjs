@@ -1,5 +1,11 @@
+// Serve the app under a sub-path, e.g. BASE_PATH=/cto -> https://server/cto/
+// Read at build time: set it in .env BEFORE `npm run build` (rebuild after changing it).
+const basePath = (process.env.BASE_PATH || '').replace(/\/+$/, '');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath,
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   // nodemailer, pdf-lib and mysql2 use Node APIs; load them at runtime instead of bundling them.
   serverExternalPackages: ['nodemailer', 'pdf-lib', 'mysql2'],
   poweredByHeader: false,
