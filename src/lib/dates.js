@@ -114,22 +114,31 @@ export function resumeDateFor(endYMD) {
 
 // ---------- formatting ----------
 
+// Formatted by hand so the server and every browser produce exactly the same text.
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** e.g. "Wednesday, 30 September 2026" */
 export function fmtLong(ymd) {
   const d = parseYMD(ymd);
-  return d ? d.toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  return d ? `${DAY_NAMES[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCFullYear()}` : '';
 }
 
+/** e.g. "Wed, 30 Sep 2026" */
 export function fmtDate(ymd) {
   const d = parseYMD(ymd);
-  return d ? d.toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  return d ? `${DAY_NAMES[d.getUTCDay()].slice(0, 3)}, ${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()].slice(0, 3)} ${d.getUTCFullYear()}` : '';
 }
 
-/** Formats an ISO timestamp in Trinidad and Tobago time. */
+/** Formats an ISO timestamp in Trinidad and Tobago time, e.g. "30 Sep 2026, 11:33 am". */
 export function fmtDateTime(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleString('en-GB', {
-    timeZone: TIME_ZONE, day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
-  });
+  const p = {};
+  for (const part of new Intl.DateTimeFormat('en-US', {
+    timeZone: TIME_ZONE, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(iso))) p[part.type] = part.value;
+  const h = parseInt(p.hour, 10) % 24;
+  return `${parseInt(p.day, 10)} ${MONTH_NAMES[parseInt(p.month, 10) - 1].slice(0, 3)} ${p.year}, ${h % 12 || 12}:${p.minute} ${h < 12 ? 'am' : 'pm'}`;
 }
 
 export function plural(n, word) {

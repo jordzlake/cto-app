@@ -42,6 +42,21 @@ Use Node 20.9 or newer. The server needs a **writable, persistent** `DATA_DIR`, 
 
 **Validation:** Name and Position accept letters, spaces and dashes only, with no numbers. Name must include a first and last name. Days must be 1–60. Start date is picked from a calendar, can't be in the past, and must be a working day. Email must be a `@gov.tt` address. Every rule is checked again on the server.
 
+## Database (MariaDB)
+
+Applications are saved to the table **`ctoapplications`**. The row is inserted when the applicant submits and updated at each approval step.
+
+1. Create the table by running `db/ctoapplications.sql` against your database.
+2. Give the app an account with `SELECT, INSERT, UPDATE` on that table.
+3. Set the connection string in `.env`:
+   ```
+   DATABASE_URL=mysql://cto_app:your-password@db-host:3306/your_database
+   ```
+   URL-encode special characters in the password (`#` → `%23`, `@` → `%40`, `:` → `%3A`, `/` → `%2F`).
+4. Check it works with `npm run db:verify`.
+
+If `DATABASE_URL` is empty, applications are stored as JSON files in `DATA_DIR/requests` instead. That's handy on a dev machine without a database. If the database is set but can't be reached, the applicant sees a clear "try again" message and no emails are sent. The mail outbox always stays in `DATA_DIR/mail`.
+
 ## Mail relay and fallback
 
 Configure the relay in `.env`. The defaults are already `mailrelay.gov.tt`, port 25, no authentication.
@@ -89,7 +104,9 @@ src/lib/emails.js                   Email wording for each step
 src/lib/pdf.js                      Step 8 PDF
 src/lib/dates.js                    Working days and T&T holidays
 src/lib/validation.js               Rules shared by browser and server
-src/lib/store.js                    JSON file storage (swap this file for a database later)
+src/lib/store.js                    Picks MariaDB (DATABASE_URL) or JSON files
+src/lib/db.js                       MariaDB queries for the ctoapplications table
+db/ctoapplications.sql              CREATE TABLE script
 src/instrumentation.js              Starts the mail retry loop on server start
 ```
 

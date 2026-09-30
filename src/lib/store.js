@@ -1,11 +1,14 @@
 /**
- * Very small file-based store: one JSON file per request in DATA_DIR/requests.
- * Good for a single-server deployment. To move to a database later, replace the
- * functions in this file only - nothing else touches the disk for requests.
+ * Storage for CTO applications.
+ *  - DATABASE_URL set  -> MariaDB table `ctoapplications` (see src/lib/db.js, db/ctoapplications.sql)
+ *  - DATABASE_URL empty -> one JSON file per request in DATA_DIR/requests (handy for development)
+ * Nothing else in the app touches storage for requests.
+ * The mail outbox always uses DATA_DIR/mail.
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { dbEnabled, dbGetRequest, dbSaveRequest, dbRequestExists } from './db.js';
 
 export function dataDir(...parts) {
   return path.resolve(process.env.DATA_DIR || path.join(process.cwd(), 'data'), ...parts);
@@ -46,6 +49,7 @@ export function tokensMatch(a, b) {
 
 export async function getRequest(id) {
   if (!isValidId(id)) return null;
+  if (dbEnabled()) return dbGetRequest(id);
   try {
     return JSON.parse(await fs.readFile(path.join(REQ_DIR(), id + '.json'), 'utf8'));
   } catch (e) {
@@ -57,11 +61,13 @@ export async function getRequest(id) {
 export async function saveRequest(req) {
   if (!isValidId(req.id)) throw new Error('Invalid request id');
   req.updatedAt = new Date().toISOString();
+  if (dbEnabled()) { await dbSaveRequest(req); return req; }
   await writeJsonAtomic(path.join(REQ_DIR(), req.id + '.json'), req);
   return req;
 }
 
 export async function requestExists(id) {
+  if (dbEnabled()) return dbRequestExists(id);
   try { await fs.access(path.join(REQ_DIR(), id + '.json')); return true; } catch { return false; }
 }
 

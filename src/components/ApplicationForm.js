@@ -16,12 +16,12 @@ const INPUT_ID = {
   startDate: 'cto-start', outsideCountry: 'cto-outside-yes', stream: 'cto-stream-administration',
 };
 
-export default function ApplicationForm() {
+export default function ApplicationForm({ initialToday = '' }) {
   const [values, setValues] = useState(EMPTY);
   const [touched, setTouched] = useState({});
   const [errors, setErrors] = useState({});
   const [summary, setSummary] = useState(null); // list of errors shown in the top box
-  const [today, setToday] = useState('');
+  const [today, setToday] = useState(initialToday);
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState('');
   const [result, setResult] = useState(null);
@@ -128,7 +128,7 @@ export default function ApplicationForm() {
         return;
       }
       if (!res.ok) throw new Error(data.error || 'Server responded with ' + res.status);
-      setResult({ ...data, values: { ...values }, submittedAt: new Date().toISOString() });
+      setResult({ ...data, values: { ...values }, requestDate: data.requestDate || today, submittedAt: new Date().toISOString() });
     } catch (err) {
       setBanner(err.message && !/fetch/i.test(err.message) ? err.message : 'The server couldn’t be reached. Check your connection and select Submit request again.');
       setTimeout(() => bannerRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
@@ -224,6 +224,13 @@ export default function ApplicationForm() {
                         aria-invalid={!!errors.email} aria-describedby="cto-email-hint cto-email-error" />
                       <p className="cto-hint" id="cto-email-hint">The completed form is sent here. Must be an {ALLOWED_EMAIL_DOMAINS.map((d) => '@' + d).join(' / ')} address.</p>
                       <FieldError id="cto-email-error" msg={errors.email} />
+                    </div>
+
+                    <div className="cto-field">
+                      <label className="cto-label" htmlFor="cto-date">Date</label>
+                      <input className="cto-input" id="cto-date" name="requestDate" type="text" readOnly tabIndex={-1}
+                        value={today ? fmtLong(today) : ''} aria-describedby="cto-date-hint" />
+                      <p className="cto-hint" id="cto-date-hint">Today’s date, filled in automatically.</p>
                     </div>
                   </div>
                 </div>
@@ -328,6 +335,7 @@ function Success({ result, headingRef, onNew }) {
     ['Name', normalizeText(v.name)],
     ['Position', normalizeText(v.position)],
     ['Email', v.email.trim().toLowerCase()],
+    ['Date', fmtLong(result.requestDate)],
     ['Compensatory days', plural(d, 'day')],
     ['CTO period', fmtLong(v.startDate) + ' to ' + fmtLong(end)],
     ['Outside the country', v.outsideCountry === 'yes' ? 'Yes' : 'No'],

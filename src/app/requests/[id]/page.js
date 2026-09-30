@@ -31,7 +31,20 @@ export default async function RequestPage({ params, searchParams }) {
   const { id } = await params;
   const sp = await searchParams;
   const token = typeof sp.t === 'string' ? sp.t : '';
-  const stored = await getRequest(id);
+  let stored;
+  try {
+    stored = await getRequest(id);
+  } catch (err) {
+    console.error('[requests] database error', err.cause || err);
+    return (
+      <section className="cto-module">
+        <div className="cto-plain">
+          <h2>The form can’t be loaded right now</h2>
+          <p>The database can’t be reached. Try again in a few minutes.</p>
+        </div>
+      </section>
+    );
+  }
   const role = roleForToken(stored, token);
 
   if (!stored || !role) {

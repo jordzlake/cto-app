@@ -8,7 +8,11 @@ export const runtime = 'nodejs';
 export async function GET(request, { params }) {
   const { id } = await params;
   const token = new URL(request.url).searchParams.get('t');
-  const req = await getRequest(id);
+  let req;
+  try { req = await getRequest(id); } catch (err) {
+    console.error('[pdf] database error', err.cause || err);
+    return new Response('The database can’t be reached right now. Try again in a few minutes.', { status: 503 });
+  }
   if (!req || !roleForToken(req, token)) return new Response('Not found', { status: 404 });
   const pdf = await buildRequestPdf(req);
   return new Response(pdf, {
